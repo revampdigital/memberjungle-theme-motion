@@ -64,7 +64,7 @@
     function onScroll() {
       if (pending) return;
       pending = true;
-      (window.requestAnimationFrame || setTimeout)(sweep);
+      setTimeout(sweep, 40);
     }
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
