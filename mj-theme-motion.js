@@ -44,13 +44,31 @@
       }
     });
 
-    /* safety net: anything still hidden after 4s is shown */
-    setTimeout(function () {
-      Array.prototype.forEach.call(document.querySelectorAll('.t-reveal:not(.is-in)'), function (el) {
+    /* belt and braces: a cheap scroll check as well as the observer, so a
+       block can never stay hidden if the observer is late or unavailable */
+    var pending = false;
+    function sweep() {
+      pending = false;
+      var left = document.querySelectorAll('.t-reveal:not(.is-in)');
+      if (!left.length) {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+        return;
+      }
+      var h = window.innerHeight;
+      Array.prototype.forEach.call(left, function (el) {
         var r = el.getBoundingClientRect();
-        if (r.top < window.innerHeight && r.bottom > 0) el.classList.add('is-in');
+        if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('is-in');
       });
-    }, 4000);
+    }
+    function onScroll() {
+      if (pending) return;
+      pending = true;
+      (window.requestAnimationFrame || setTimeout)(sweep);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    setTimeout(sweep, 4000);
   }
 
   if (document.readyState === 'loading') {
