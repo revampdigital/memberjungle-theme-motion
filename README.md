@@ -8,6 +8,10 @@ It also adds previous and next buttons to a quicklink row that a theme has turne
 
 A scroller row can also turn by itself. A theme sets `--t-scroll-auto: <milliseconds>` on the row (2000 or more) and the row moves on by one card at that interval, going back to the first card after the last. `--t-scroll-loop: 1` on its own makes the buttons go round without turning by itself. Turning stops while the pointer is over the row or its buttons, while either has keyboard focus, while the row is off screen and while the tab is hidden, and restarts its wait after every click or swipe. It never runs for a visitor who has asked for reduced motion. Rows that set neither behave as before.
 
+The scroller buttons also work on a photo strip (`.des-photostrip`) that a theme gives `--t-scroll: 1`; each photo counts as a card.
+
+A slideshow's Opacity setting fades the whole slideshow, text and colour panels included. The script moves it onto the photos: the slideshow is set back to full strength, marked `t-slide-faded`, and given the value as `--t-slide-opacity` for the theme to put on its images. Without the script the platform's fade stays as it was.
+
 ## Install
 
 Organisation settings > Content Management > Site Body Code:

@@ -9,7 +9,7 @@
 
    2. Scroller arrows (added 17 Nov 2026). A theme can turn a quicklink row
       into a sideways scroller with CSS alone. Where it also sets
-      --t-scroll: 1 on that row, this adds a previous and a next button
+      --t-scroll: 1 on that row (a quicklink row, or since 23 Nov 2026 a photo strip), this adds a previous and a next button
       straight after the row (div.t-scroll-nav > button.t-scroll-btn), marks
       the row .t-scroll-on and its parent .t-scroll-wrap, and keeps the
       buttons' disabled state in step with the scroll position. The theme
@@ -26,12 +26,15 @@
       tab is hidden, and restarts its wait after every click or swipe. It
       never runs for a visitor who has asked for reduced motion.
 
+   4. Slideshow opacity: the widget's Opacity is moved from the whole
+      slideshow onto its photos (--t-slide-opacity, .t-slide-faded).
+
    Safe to leave installed when a theme uses none of these. */
 (function () {
   /* 2. scroller arrows: independent of the motion switch */
   function initScrollers() {
     var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    var rows = document.querySelectorAll('.row.cb_quicklink');
+    var rows = document.querySelectorAll('.row.cb_quicklink, .des-photostrip');
     Array.prototype.forEach.call(rows, function (row) {
       if (row.className.indexOf('t-scroll-on') > -1) return;
       var cs = getComputedStyle(row);
@@ -66,7 +69,7 @@
       function step() {
         var cards = [];
         Array.prototype.forEach.call(row.children, function (c) {
-          if (c.tagName === 'DIV' && c.offsetWidth) cards.push(c);
+          if ((c.tagName === 'DIV' || c.tagName === 'A') && c.offsetWidth) cards.push(c);
         });
         if (cards.length > 1) {
           var d = Math.abs(cards[1].getBoundingClientRect().left - cards[0].getBoundingClientRect().left);
@@ -135,8 +138,25 @@
     });
   }
 
+  /* 4. slideshow opacity (23 Nov 2026): the widget's Opacity setting fades the
+     whole slideshow, text and colour panels included. Move it onto the photos:
+     the slideshow is set back to full strength and its value is handed to the
+     theme as --t-slide-opacity on the carousel, marked .t-slide-faded. */
+  function initSlideOpacity() {
+    var shows = document.querySelectorAll('.module.output.slideshow .carousel');
+    Array.prototype.forEach.call(shows, function (c) {
+      if (c.className.indexOf('t-slide-faded') > -1) return;
+      var o = parseFloat(getComputedStyle(c).opacity);
+      if (!(o < 1)) return;
+      c.style.setProperty('-' + '-t-slide-opacity', String(o));
+      c.style.setProperty('opacity', '1', 'important');
+      c.classList.add('t-slide-faded');
+    });
+  }
+
   function init() {
     try { initScrollers(); } catch (e) { /* never let the arrows stop the reveal */ }
+    try { initSlideOpacity(); } catch (e) { /* leave the platform's fade as it is */ }
     var root = document.documentElement;
     var flag = getComputedStyle(root).getPropertyValue('-' + '-t-motion').trim();
     if (flag !== '1') return;
