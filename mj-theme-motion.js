@@ -151,6 +151,14 @@
       c.style.setProperty('-' + '-t-slide-opacity', String(o));
       c.style.setProperty('opacity', '1', 'important');
       c.classList.add('t-slide-faded');
+      /* a theme that does not put the value on its photos (no rule for
+         .t-slide-faded) keeps the platform's fade as it was */
+      var img = c.querySelector('.carousel-inner > .item img');
+      if (!img || parseFloat(getComputedStyle(img).opacity) >= 1) {
+        c.style.removeProperty('opacity');
+        c.style.removeProperty('-' + '-t-slide-opacity');
+        c.classList.remove('t-slide-faded');
+      }
     });
   }
 

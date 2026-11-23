@@ -10,7 +10,7 @@ A scroller row can also turn by itself. A theme sets `--t-scroll-auto: <millisec
 
 The scroller buttons also work on a photo strip (`.des-photostrip`) that a theme gives `--t-scroll: 1`; each photo counts as a card.
 
-A slideshow's Opacity setting fades the whole slideshow, text and colour panels included. The script moves it onto the photos: the slideshow is set back to full strength, marked `t-slide-faded`, and given the value as `--t-slide-opacity` for the theme to put on its images. Without the script the platform's fade stays as it was.
+A slideshow's Opacity setting fades the whole slideshow, text and colour panels included. The script moves it onto the photos: the slideshow is set back to full strength, marked `t-slide-faded`, and given the value as `--t-slide-opacity` for the theme to put on its images. Without the script, or with a theme that does not fade its photos with that value, the platform's fade stays as it was.
 
 ## Install
 
