@@ -16,7 +16,17 @@
       styles and places the buttons. The row still scrolls by touch,
       trackpad and keyboard without this.
 
-   Safe to leave installed when a theme uses neither. */
+   3. Turning by itself and looping (added 23 Nov 2026). A scroller row
+      that also sets --t-scroll-auto: <milliseconds> moves on by one card
+      at that interval, and one that sets --t-scroll-loop: 1 goes back to
+      the start after the last card (and to the end before the first), so
+      its arrows are never switched off. Turning by itself always loops. It
+      stops while the pointer is over the row or its arrows, while anything
+      in them has keyboard focus, while the row is off screen and while the
+      tab is hidden, and restarts its wait after every click or swipe. It
+      never runs for a visitor who has asked for reduced motion.
+
+   Safe to leave installed when a theme uses none of these. */
 (function () {
   /* 2. scroller arrows: independent of the motion switch */
   function initScrollers() {
@@ -24,8 +34,12 @@
     var rows = document.querySelectorAll('.row.cb_quicklink');
     Array.prototype.forEach.call(rows, function (row) {
       if (row.className.indexOf('t-scroll-on') > -1) return;
-      var flag = getComputedStyle(row).getPropertyValue('-' + '-t-scroll').trim();
+      var cs = getComputedStyle(row);
+      var flag = cs.getPropertyValue('-' + '-t-scroll').trim();
       if (flag !== '1') return;
+      var auto = parseInt(cs.getPropertyValue('-' + '-t-scroll-auto'), 10) || 0;
+      if (auto > 0 && auto < 2000) auto = 2000;
+      var loop = auto > 0 || cs.getPropertyValue('-' + '-t-scroll-loop').trim() === '1';
 
       function make(cls, label, arrow) {
         var b = document.createElement('button');
@@ -63,16 +77,51 @@
       function sync() {
         var max = row.scrollWidth - row.clientWidth;
         nav.hidden = max < 2;
-        prev.disabled = row.scrollLeft < 2;
-        next.disabled = row.scrollLeft > max - 2;
+        prev.disabled = !loop && row.scrollLeft < 2;
+        next.disabled = !loop && row.scrollLeft > max - 2;
+      }
+      function to(x) {
+        if (row.scrollTo) row.scrollTo({ left: x, behavior: reduce ? 'auto' : 'smooth' });
+        else row.scrollLeft = x;
       }
       function go(dir) {
+        var max = row.scrollWidth - row.clientWidth;
+        if (loop && dir > 0 && row.scrollLeft > max - 2) return to(0);
+        if (loop && dir < 0 && row.scrollLeft < 2) return to(max);
         var by = dir * step();
         if (row.scrollBy) row.scrollBy({ left: by, behavior: reduce ? 'auto' : 'smooth' });
         else row.scrollLeft += by;
       }
-      prev.addEventListener('click', function () { go(-1); });
-      next.addEventListener('click', function () { go(1); });
+      /* 3. turning by itself */
+      var timer = null, held = false, seen = true;
+      function wait() {
+        if (!(auto > 0) || reduce) return;
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          timer = null;
+          if (!held && seen && !document.hidden && !nav.hidden) go(1);
+          wait();
+        }, auto);
+      }
+      if (auto > 0 && !reduce) {
+        var hold = function () { held = true; };
+        var release = function () { held = false; wait(); };
+        [row, nav].forEach(function (el) {
+          el.addEventListener('mouseenter', hold);
+          el.addEventListener('mouseleave', release);
+          el.addEventListener('focusin', hold);
+          el.addEventListener('focusout', release);
+        });
+        row.addEventListener('touchstart', wait, { passive: true });
+        if ('IntersectionObserver' in window) {
+          new IntersectionObserver(function (entries) {
+            seen = entries[entries.length - 1].isIntersecting;
+          }, { threshold: 0.25 }).observe(row);
+        }
+        wait();
+      }
+      prev.addEventListener('click', function () { go(-1); wait(); });
+      next.addEventListener('click', function () { go(1); wait(); });
       var waiting = false;
       function later() {
         if (waiting) return;
