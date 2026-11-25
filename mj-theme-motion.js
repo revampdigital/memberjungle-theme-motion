@@ -29,6 +29,14 @@
    4. Slideshow opacity: the widget's Opacity is moved from the whole
       slideshow onto its photos (--t-slide-opacity, .t-slide-faded).
 
+   5. Widget headings (added 25 Nov 2026). A theme that sets
+      --t-head-auto: 1 on quicklink headings gets a check: a heading that
+      cannot be read on its own widget's Background Colour (contrast under
+      1.6, such as white on light grey) is marked .t-head-page (the page
+      heading colour) or .t-head-light (white), whichever reads better. The
+      theme colours those classes. A heading on a Background Image is left
+      alone unless the theme sets 2 (the colour is under the text there).
+
    Safe to leave installed when a theme uses none of these. */
 (function () {
   /* 2. scroller arrows: independent of the motion switch */
@@ -162,8 +170,58 @@
     });
   }
 
+  /* 5. widget headings: see the top of the file */
+  function initHeadings() {
+    function rgba(v) {
+      var m = /^rgba?\(([^)]+)\)/.exec(v || '');
+      if (m) {
+        var p = m[1].split(/[\s,\/]+/).filter(Boolean).map(parseFloat);
+        return p.length < 3 || p.some(isNaN) ? null : [p[0], p[1], p[2], p.length > 3 ? p[3] : 1];
+      }
+      m = /^color\(srgb ([^)]+)\)/.exec(v || '');
+      if (!m) return null;
+      var q = m[1].split(/[\s\/]+/).filter(Boolean).map(parseFloat);
+      return q.length < 3 || q.some(isNaN) ? null : [q[0] * 255, q[1] * 255, q[2] * 255, q.length > 3 ? q[3] : 1];
+    }
+    function lum(c) {
+      var l = [c[0], c[1], c[2]].map(function (x) { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); });
+      return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+    }
+    function ratio(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
+    function over(top, under) {
+      var a = top[3];
+      return [0, 1, 2].map(function (i) { return top[i] * a + under[i] * (1 - a); }).concat(1);
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.row.cb_quicklink > .cb_ql_heading'), function (h) {
+      h.classList.remove('t-head-page');
+      h.classList.remove('t-head-light');
+      var mode = getComputedStyle(h).getPropertyValue('-' + '-t-head-auto').trim();
+      if (mode !== '1' && mode !== '2') return;
+      var layers = [], el = h, own = false, photo = false;
+      while (el && !(el.classList.contains('module') && el.classList.contains('output'))) {
+        var cs = getComputedStyle(el), c = rgba(cs.backgroundColor);
+        if (c && c[3] > 0) { layers.push(c); own = true; }
+        if (cs.backgroundImage !== 'none') photo = true;
+        el = el.parentElement;
+      }
+      if (!own || (photo && mode !== '2')) return;
+      var page = rgba(getComputedStyle(document.body).backgroundColor);
+      var bg = page && page[3] > 0 ? over(page, [255, 255, 255, 1]) : [255, 255, 255, 1];
+      for (var i = layers.length - 1; i >= 0; i--) bg = over(layers[i], bg);
+      var now = rgba(getComputedStyle(h).color);
+      if (!now || ratio(now, bg) >= 1.6) return;
+      var t = document.createElement('span');
+      t.style.cssText = 'display:none;color:var(-' + '-main_heading)';
+      h.parentNode.appendChild(t);
+      var base = rgba(getComputedStyle(t).color) || [0, 0, 0, 1];
+      h.parentNode.removeChild(t);
+      h.classList.add(ratio([255, 255, 255, 1], bg) > ratio(base, bg) ? 't-head-light' : 't-head-page');
+    });
+  }
+
   function init() {
     try { initScrollers(); } catch (e) { /* never let the arrows stop the reveal */ }
+    try { initHeadings(); } catch (e) { /* headings keep the widget's colour */ }
     try { initSlideOpacity(); } catch (e) { /* leave the platform's fade as it is */ }
     var root = document.documentElement;
     var flag = getComputedStyle(root).getPropertyValue('-' + '-t-motion').trim();

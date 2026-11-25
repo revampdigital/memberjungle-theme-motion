@@ -12,6 +12,8 @@ The scroller buttons also work on a photo strip (`.des-photostrip`) that a theme
 
 A slideshow's Opacity setting fades the whole slideshow, text and colour panels included. The script moves it onto the photos: the slideshow is set back to full strength, marked `t-slide-faded`, and given the value as `--t-slide-opacity` for the theme to put on its images. Without the script, or with a theme that does not fade its photos with that value, the platform's fade stays as it was.
 
+A theme that sets `--t-head-auto: 1` on quicklink headings gets a contrast check: a heading that cannot be read on its own widget's Background Colour is marked `t-head-page` or `t-head-light` for the theme to colour. A heading on a Background Image is left alone unless the theme sets `2`. Themes that set neither are untouched.
+
 ## Install
 
 Organisation settings > Content Management > Site Body Code:
